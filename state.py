@@ -93,9 +93,9 @@ class State:
         )
         return self
     
-    def measure_z(self, j: int, cbit: int = None):
+    def measure(self, j: int, cbit: int = None):
         """
-        Measure the j-th qubit in the Z (computational) basis.
+        Measure the j-th qubit.
         
         Args:
             j: Index of qubit to measure
