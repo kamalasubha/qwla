@@ -1,4 +1,4 @@
-# QWLA: Quantum computing with linear algebra
+# QWLA: Quantum computing without linear algebra
 
 This is a tiny quantum circuit simulator.
 The simulator is written in Python. It represents the state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
