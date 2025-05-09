@@ -5,9 +5,6 @@ from bitarray import frozenbitarray as bitarray
 from bitarray import bitarray as mut_bitarray
 import random
 
-# Complex number i for quantum operations
-img = 1j
-
 # Helper functions for bit manipulation
 def set_bit(x: bitarray, i: int, v: int) -> bitarray:
     """Set the i-th bit of bitarray x to value v (0 or 1)"""
@@ -66,14 +63,14 @@ class State:
         """
         Apply the S (phase) gate to the j-th qubit.
         """
-        self.state = self.state.smap(lambda b, a: (b, (img ** b[j]) * a))
+        self.state = self.state.smap(lambda b, a: (b, (1j ** b[j]) * a))
         return self
 
     def t(self, j: int):
         """
         Apply the T gate to the j-th qubit.
         """
-        phase = exp(img * pi / 4)
+        phase = exp(1j * pi / 4)
         self.state = self.state.smap(lambda b, a: (b, (phase ** b[j]) * a))
         return self
     
@@ -135,9 +132,8 @@ class State:
         """
         Return a string representation of the quantum state.
         
-        Format: Each basis state with its corresponding amplitude.
+        Format: Each bitstring with its corresponding amplitude.
         """
-        # sort the list by basis state, starting at 00
         self.state = self.state.sorted(key=lambda x: x[0].to01())
  
-        return "\n".join([f"{b.to01()}: {a}" for b, a in self.state])
+        return "\n".join([f"{b.to01()}: {a:.2f}" for b, a in self.state])
