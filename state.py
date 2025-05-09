@@ -118,14 +118,12 @@ class State:
         """
         print(f"-> Measuring qubit {j}")
         # compute the probability of 0
-        prob_0 = (
-            self.state.filter(lambda s: not s[0][j])
-            .smap(lambda b, a: a.conjugate() * a)
-            .sum()
-        )
+        prob_0 = self.state.filter(lambda s: not s[0][j])\
+            .smap(lambda _, a: a.conjugate() * a)\
+            .sum().real # take the real component (the imaginary component is 0)
 
-        measurement = int(random.random() >= prob_0)
         print(f"\tProbability of 0: {prob_0:.3f}")
+        measurement = int(random.random() >= prob_0)
         print(f"\tMeasurement result: {measurement}")
 
         if cbit is not None:
