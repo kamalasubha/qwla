@@ -1,0 +1,10 @@
+[project]
+name = "qwla"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyfunctional>=1.5.0",
+    "bitarray>=3.4.0",
+]
