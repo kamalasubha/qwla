@@ -4,6 +4,7 @@ from functional import seq
 from bitarray import frozenbitarray as bitarray
 from bitarray import bitarray as mut_bitarray
 import random
+from typing import Optional
 
 
 # Helper functions for bit manipulation
@@ -99,7 +100,7 @@ class State:
         )
         return self
 
-    def measure(self, j: int, cbit: int = None):
+    def measure(self, j: int, cbit: Optional[int] = None):
         """
         Measure the j-th qubit.
 
