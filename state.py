@@ -31,6 +31,8 @@ class State:
         
         The state starts in 0...0 (ground state).
         """
+        assert(n_qubits > 0 and m_bits >= 0)
+        
         self.n_qubits = n_qubits
         self.m_bits = m_bits
         self.state = seq(
@@ -47,15 +49,17 @@ class State:
         
         This gate flips the basis states where qubit j is present.
         """
+        print(f"-> Applying X gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (flip(b, j), a))
         return self
 
-    def cx(self, ctrl: int, trgt: int):
+    def cx(self, j: int, k: int):
         """
-        Apply the CX (controlled-NOT) gate with control qubit ctrl and target qubit trgt.
+        Apply the CX (controlled-NOT) gate with control qubit ctrl (j) and target (k) qubit trgt.
         """
+        print(f"-> Applying CX gate with control {j} and target {k}")
         self.state = self.state.smap(
-            lambda b, a: (b if not b[ctrl] else flip(b, trgt), a)
+            lambda b, a: (b if not b[j] else flip(b, k), a)
         )
         return self
 
@@ -63,6 +67,7 @@ class State:
         """
         Apply the S (phase) gate to the j-th qubit.
         """
+        print(f"Applying S gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (b, (1j ** b[j]) * a))
         return self
 
@@ -70,6 +75,7 @@ class State:
         """
         Apply the T gate to the j-th qubit.
         """
+        print(f"-> Applying T gate to qubit {j}")
         phase = exp(1j * pi / 4)
         self.state = self.state.smap(lambda b, a: (b, (phase ** b[j]) * a))
         return self
@@ -78,6 +84,7 @@ class State:
         """
         Apply the Hadamard gate to the j-th qubit.
         """
+        print(f"-> Applying Hadamard gate to qubit {j}")
         self.state = (
             self.state.smap(
                 lambda b, a: [
@@ -101,6 +108,7 @@ class State:
         Returns:
             The state after measurement (collapsed)
         """
+        print(f"-> Measuring qubit {j}")
         # compute the probability of 0
         prob_0 = (
             self.state.filter(lambda s: not s[0][j])
@@ -108,24 +116,27 @@ class State:
             .sum()
         )
         
-        measurement = random.random() < prob_0
+        measurement = int(random.random() >= prob_0)
+        print(f"\tProbability of 0: {prob_0:.3f}")
+        print(f"\tMeasurement result: {measurement}")
         
         if cbit is not None:
-            self.cbits[cbit] = measurement
+            self.cbits[cbit] = int(measurement)
             
-        if random.random() < prob_0:
+        if measurement == 0:
             # Collapse to 0 state
-            self.state = self.state.smap(lambda b, a: (b, a * (not b[j]))).smap(
+            self.state = self.state.smap(
+                lambda b, a: (b, a * (not b[j]))
+            ).smap(
                 lambda b, a: (b, a / sqrt(prob_0))
             )
         else:
             # Collapse to 1 state
-            self.state = self.state.smap(lambda b, a: (b, a * b[j])).smap(
+            self.state = self.state.smap(
+                lambda b, a: (b, a * b[j])
+            ).smap(
                 lambda b, a: (b, a / sqrt(1.0 - prob_0))
             )
-        
-        if cbit is not None:
-            self.cbits[cbit] = 0 if random.random() < prob_0 else 1
         return self
     
     def __str__(self):
@@ -136,4 +147,10 @@ class State:
         """
         self.state = self.state.sorted(key=lambda x: x[0].to01())
  
-        return "\n".join([f"{b.to01()}: {a:.2f}" for b, a in self.state])
+        result = "Quantum state:\n" + "\n".join([f"{b.to01()}: {a:.2f}" for b, a in self.state])
+        
+        # Add classical register values if they exist
+        if self.m_bits > 0:
+            result += f"\n\nClassical register: {self.cbits}"
+            
+        return result
