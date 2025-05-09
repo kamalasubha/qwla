@@ -1,10 +1,15 @@
+"""
+Quantum state simulator using functional programming techniques.
+This module implements a quantum state class that supports various quantum gates
+and operations without requiring matrix algebra.
+"""
 from math import sqrt, pi
 from cmath import exp
+import random
+from typing import Optional
 from functional import seq
 from bitarray import frozenbitarray as bitarray
 from bitarray import bitarray as mut_bitarray
-import random
-from typing import Optional
 
 
 # Helper functions for bit manipulation
