@@ -32,7 +32,7 @@ class State:
     Quantum state using a dictionary-like structure mapping bitstrings to amplitudes.
     """
 
-    def __init__(self, n_qubits: int, m_bits: int = 0):
+    def __init__(self, n_qubits: int, n_bits: int = 0):
         """
         Initialize a quantum state with n_qubits qubits and m_bits classical bits.
 
@@ -42,17 +42,17 @@ class State:
 
         The state starts in 0...0 (ground state).
         """
-        assert n_qubits > 0 and m_bits >= 0
+        assert n_qubits > 0 and n_bits >= 0
 
         self.n_qubits = n_qubits
-        self.m_bits = m_bits
+        self.m_bits = n_bits
         self.state = seq(
             [
                 (bitarray(format(i, f"0{n_qubits}b")), 1.0 if i == 0 else 0.0)
                 for i in range(2**n_qubits)
             ]
         )
-        self.cbits = [0] * m_bits
+        self.cbits = [0] * n_bits
 
     def x(self, j: int):
         """
@@ -121,7 +121,7 @@ class State:
         # compute the probability of 0
         prob_0 = (
             self.state.filter(lambda s: not s[0][j])
-            .smap(lambda _, a: a.conjugate() * a)
+            .smap(lambda _, a: abs(a)**2)
             .sum()
             .real
         )  # take the real component (the imaginary component is 0)

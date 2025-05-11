@@ -7,7 +7,7 @@ The simulator is written in Python. It represents the state as a dictionary and 
 
 The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations.
 
-There are also some example circuits in `example_*.py`.
+There are also some example circuits in the root directory.
 
 The easiest way to use this with `uv`.
 To run an example, simply:
