@@ -1,7 +1,8 @@
 # QWLA: Quantum computing without the linear algebra
 
-![ChatGPT Image May 13, 2025, 02_51_04 PM](https://github.com/user-attachments/assets/5b65a96e-4fcc-4af9-b580-a09c509a38cc)
-
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/5b65a96e-4fcc-4af9-b580-a09c509a38cc" width="300" />
+</div>
 This is a tiny quantum circuit simulator.
 The simulator is written in Python. It represents the state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
