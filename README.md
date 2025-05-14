@@ -8,7 +8,7 @@ It represents a quantum state as a dictionary and applies operations in a functi
 
 ## Usage
 
-The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations.
+The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
 
 There are also some example circuits in the root directory.
 
