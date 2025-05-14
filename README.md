@@ -12,7 +12,7 @@ The `state.py` file contains the `State` class, which is a quantum state and sup
 
 There are also some example circuits in the root directory.
 
-The easiest way to use this with [uv](https://docs.astral.sh/uv/getting-started/installation/).
+The easiest way to use QWLA is with [uv](https://docs.astral.sh/uv/getting-started/installation/).
 To run an example, simply:
 
 ```bash
