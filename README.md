@@ -6,6 +6,8 @@
 This is a tiny quantum circuit simulator written in Python. 
 It represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
+For all technical details and an introduction to quantum computing without the linear algebra, see the accompanying paper: TBD
+
 ## structure
 - The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
 - There are example circuits in the `examples/` folder.
