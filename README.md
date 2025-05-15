@@ -10,13 +10,13 @@ It represents a quantum state as a dictionary and applies operations in a functi
 
 The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
 
-There are also some example circuits in the root directory.
+There are also some example circuits in the `examples/` folder.
 
 The easiest way to use QWLA is with [uv](https://docs.astral.sh/uv/getting-started/installation/).
 To run an example, simply:
 
 ```bash
-uv run example_epr.py
+uv run examples/epr.py
 ```
 
 
