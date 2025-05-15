@@ -6,12 +6,12 @@
 This is a tiny quantum circuit simulator written in Python. 
 It represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
-## Usage
+## structure
+- The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
+- There are example circuits in the `examples/` folder.
 
-The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
 
-There are also some example circuits in the `examples/` folder.
-
+## usage
 The easiest way to use QWLA is with [uv](https://docs.astral.sh/uv/getting-started/installation/).
 To run an example, simply:
 
