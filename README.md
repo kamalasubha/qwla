@@ -3,7 +3,7 @@
 <div align="center">
   <img src="https://github.com/user-attachments/assets/5b65a96e-4fcc-4af9-b580-a09c509a38cc" width="300" />
 </div>
-This is a tiny quantum circuit simulator written in Python. 
+QWLA is a tiny quantum circuit simulator written in Python. 
 It represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
 ## technical details
