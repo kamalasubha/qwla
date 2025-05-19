@@ -3,8 +3,9 @@
 <div align="center">
   <img src="https://github.com/user-attachments/assets/5b65a96e-4fcc-4af9-b580-a09c509a38cc" width="300" />
 </div>
-QWLA is a tiny quantum circuit simulator written in Python. 
-It represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
+QWLA is a tiny quantum circuit simulator written in Python.
+The goal of QWLA, as the title suggests, is to present quantum computing without using linear algebra.
+Instead, QWLA represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
 ## technical details
 For all technical details and an introduction to quantum computing without the linear algebra, see the accompanying paper: TBD
