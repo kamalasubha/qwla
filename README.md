@@ -8,7 +8,7 @@ The goal of QWLA, as the title suggests, is to present quantum computing without
 Instead, QWLA represents a quantum state as a dictionary and applies operations in a functional style, using map, filter, reduce, etc.
 
 ## technical details
-For all technical details and an introduction to quantum computing without the linear algebra, see the accompanying paper: TBD
+For all technical details and an introduction to quantum computing without the linear algebra, see the [accompanying paper](https://eprint.iacr.org/2025/1091.pdf).
 
 ## structure
 - The `state.py` file contains the `State` class, which is a quantum state and supports a number of operations (Clifford + T).
