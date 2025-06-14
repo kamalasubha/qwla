@@ -76,7 +76,7 @@ class State:
         """
         Apply the S (phase) gate to the j-th qubit.
         """
-        print(f"Applying S gate to qubit {j}")
+        print(f"-> Applying S gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (b, (1j ** b[j]) * a))
         return self
 
@@ -94,11 +94,12 @@ class State:
         Apply the Hadamard gate to the j-th qubit.
         """
         print(f"-> Applying Hadamard gate to qubit {j}")
+        norm = 1 / sqrt(2)
         self.state = (
             self.state.smap(
                 lambda b, a: [
-                    (set_bit(b, j, 0), a / sqrt(2)),
-                    (set_bit(b, j, 1), ((1 - 2 * b[j]) * a / sqrt(2))),
+                    (set_bit(b, j, 0), a * norm),
+                    (set_bit(b, j, 1), a * norm * (-1 if b[j] else 1)),
                 ]
             )
             .flatten()
@@ -121,7 +122,7 @@ class State:
         # compute the probability of 0
         prob_0 = (
             self.state.filter(lambda s: not s[0][j])
-            .smap(lambda _, a: abs(a)**2)
+            .smap(lambda _, a: abs(a) ** 2)
             .sum()
             .real
         )  # take the real component (the imaginary component is 0)
