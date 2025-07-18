@@ -1,5 +1,6 @@
 from state import State
 from math import sqrt, pi, gcd
+from cmath import exp
 
 def modular_exponentiation(state: State, a: int, N: int, control: int, target_start: int, n_target: int):
     print(f"-> Applying modular exponentiation a={a}, N={N}")
@@ -13,6 +14,25 @@ def modular_exponentiation(state: State, a: int, N: int, control: int, target_st
             for j, bit in enumerate(binary[::-1]):  # Reverse to match qubit ordering
                 if bit == '1':
                     state.cx(control, target_start + j)
+    return state
+
+def inverse_qft(state: State, n: int):
+    """Applies the inverse Quantum Fourier Transform on the first n qubits (0 to n-1)."""
+    from math import pi
+
+    for i in reversed(range(n)):
+        # Apply controlled-Rk gates
+        for j in range(i):
+            angle = -pi / (2 ** (i - j))
+            state.cr(j, i, angle)  # Assuming your State class has controlled rotation
+
+        # Apply Hadamard gate
+        state.h(i)
+
+    # Swap qubits to reverse order (optional if State takes care of logical ordering)
+    for i in range(n // 2):
+        state.swap(i, n - i - 1)
+
     return state
 
 def shor_algorithm(N: int = 15, a: int = 2):
@@ -40,8 +60,8 @@ def shor_algorithm(N: int = 15, a: int = 2):
     print(state)
 
     # Simplified inverse QFT (apply Hadamard for demonstration)
-    for i in range(n_count):
-        state.h(i)
+    state = inverse_qft(state, n_count)
+
     print("\nAfter inverse QFT (simplified):")
     print(state)
 

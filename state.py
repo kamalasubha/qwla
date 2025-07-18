@@ -107,6 +107,24 @@ class State:
         )
         return self
 
+    def cr(self, control: int, target: int, angle: float):
+        new_state = []
+        for bits, amp in self.state:
+            if bits[control] == 1 and bits[target] == 1:
+                new_amp = amp * exp(1j * angle)
+            else:
+                new_amp = amp
+            new_state.append((bits.copy(), new_amp))
+        self.state = seq(new_state)
+
+    def swap(self, i: int, j: int):
+        new_state = []
+        for bits, amp in self.state:
+            mutable_bits = bitarray(bits.tolist())
+            mutable_bits[i], mutable_bits[j] = mutable_bits[j], mutable_bits[i]
+            new_state.append((mutable_bits, amp))
+        self.state = seq(new_state)
+
     def measure(self, j: int, cbit: Optional[int] = None):
         """
         Measure the j-th qubit.
