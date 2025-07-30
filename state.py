@@ -107,7 +107,8 @@ class State:
         )
         return self
 
-    def cr(self, control: int, target: int, angle: float):
+    def cp(self, control: int, target: int, angle: float):
+        print(f"-> Applying CP gate with control {control}, target {target}, angle {angle:.3f}")
         new_state = []
         for bits, amp in self.state:
             if bits[control] == 1 and bits[target] == 1:
@@ -120,10 +121,11 @@ class State:
     def swap(self, i: int, j: int):
         new_state = []
         for bits, amp in self.state:
-            mutable_bits = bitarray(bits.tolist())
+            mutable_bits = mut_bitarray(bits.tolist())
             mutable_bits[i], mutable_bits[j] = mutable_bits[j], mutable_bits[i]
             new_state.append((mutable_bits, amp))
         self.state = seq(new_state)
+        
 
     def measure(self, j: int, cbit: Optional[int] = None):
         """
@@ -137,31 +139,23 @@ class State:
             The state after measurement (collapsed)
         """
         print(f"-> Measuring qubit {j}")
-        # compute the probability of 0
-        prob_0 = (
-            self.state.filter(lambda s: not s[0][j])
-            .smap(lambda _, a: abs(a) ** 2)
-            .sum()
-            .real
-        )  # take the real component (the imaginary component is 0)
-
+        prob_0 = sum(abs(a) ** 2 for b, a in self.state if not b[j]).real
+        #prob_0 = sum(abs(entry[1]) ** 2 for entry in self.state if not entry[0][j]).real
         print(f"\tProbability of 0: {prob_0:.3f}")
         measurement = int(random.random() >= prob_0)
         print(f"\tMeasurement result: {measurement}")
-
         if cbit is not None:
             self.cbits[cbit] = int(measurement)
-
-        if measurement == 0:
-            # Collapse to 0 state
-            self.state = self.state.smap(lambda b, a: (b, a * (not b[j]))).smap(
-                lambda b, a: (b, a / sqrt(prob_0))
-            )
-        else:
-            # Collapse to 1 state
-            self.state = self.state.smap(lambda b, a: (b, a * b[j])).smap(
-                lambda b, a: (b, a / sqrt(1.0 - prob_0))
-            )
+        new_state = []
+        norm_factor = sqrt(prob_0) if measurement == 0 else sqrt(1.0 - prob_0)
+        for b, a in self.state:
+            if measurement == 0 and not b[j]:
+                new_state.append((b, a / norm_factor))
+            elif measurement == 1 and b[j]:
+                new_state.append((b, a / norm_factor))
+            else:
+                new_state.append((b, 0.0))
+        self.state = seq(new_state)
         return self
 
     def __str__(self):

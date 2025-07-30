@@ -1,96 +1,135 @@
 from state import State
-from math import sqrt, pi, gcd
+from math import sqrt, pi, gcd, ceil, log2
 from cmath import exp
+from typing import Optional
 
 def modular_exponentiation(state: State, a: int, N: int, control: int, target_start: int, n_target: int):
     print(f"-> Applying modular exponentiation a={a}, N={N}")
     for i in range(n_target):
-        # For a=2, N=15, we compute 2^(2^i) mod 15
         power = 2 ** (2 ** i)
-        result = pow(power, 1, N)  # Compute power mod N
-        if state.state[0][0][control]:  # If control qubit is 1
-            # Apply appropriate number of X gates to encode result
+        result = pow(power, 1, N)
+        if any(b[0][control] for b in state.state):  # Check if control qubit can be 1
             binary = format(result, f"0{n_target}b")
-            for j, bit in enumerate(binary[::-1]):  # Reverse to match qubit ordering
+            for j, bit in enumerate(binary[::-1]):
                 if bit == '1':
                     state.cx(control, target_start + j)
     return state
 
 def inverse_qft(state: State, n: int):
-    """Applies the inverse Quantum Fourier Transform on the first n qubits (0 to n-1)."""
-    from math import pi
-
-    for i in reversed(range(n)):
-        # Apply controlled-Rk gates
-        for j in range(i):
-            angle = -pi / (2 ** (i - j))
-            state.cr(j, i, angle)  # Assuming your State class has controlled rotation
-
-        # Apply Hadamard gate
-        state.h(i)
-
-    # Swap qubits to reverse order (optional if State takes care of logical ordering)
+    print(f"-> Applying inverse QFT on {n} qubits")
+    # Apply swaps in reverse order
     for i in range(n // 2):
-        state.swap(i, n - i - 1)
-
+        state.swap(i, n - 1 - i)
+    # Apply controlled phase rotations and Hadamard gates
+    for i in range(n - 1, -1, -1):
+        for j in range(i - 1, -1, -1):
+            theta = -pi / (2 ** (i - j))
+            state.cp(j, i, theta)
+        state.h(i)
     return state
 
-def shor_algorithm(N: int = 15, a: int = 2):
-    # For N=15, we need 4 qubits for counting and 4 for the function register
-    n_count = 4
-    n_target = 4
+def continued_fraction(n: int, d: int) -> list:
+    """Compute continued fraction expansion of n/d."""
+    cf = []
+    while d != 0:
+        q = n // d
+        cf.append(q)
+        n, d = d, n % d
+    return cf
+
+def convergents(cf: list) -> list:
+    """Compute convergents of continued fraction."""
+    numerators = [0, 1]
+    denominators = [1, 0]
+    for q in cf:
+        numerators.append(q * numerators[-1] + numerators[-2])
+        denominators.append(q * denominators[-1] + denominators[-2])
+    return [(n, d) for n, d in zip(numerators[2:], denominators[2:])]
+
+def find_period(a: int, N: int, measured: int, q: int) -> Optional[int]:
+    """Find period from measured value using continued fraction."""
+    if measured == 0:
+        return None  # Zero measurement cannot yield a period
+    fraction = measured / q
+    print(f"Testing fraction: {measured}/{q} = {fraction:.4f}")
+    cf = continued_fraction(measured, q)
+    for s, r in convergents(cf):
+        if r > N:
+            break
+        # Verify if r is the period
+        if pow(a, r, N) == 1:
+            return r
+    return None
+
+
+
+def shor_algorithm(N: int = 15, a: int = 2, max_attempts: int = 50):
+    # Check if a and N are coprime
+    if gcd(a, N) != 1:
+        print(f"{a} and {N} are not coprime. {gcd(a, N)} is a factor of {N}.")
+        return
+    
+    # Dynamically set number of qubits
+    n_target = ceil(log2(N))
+    n_count = 2 * n_target
     n_qubits = n_count + n_target
-    n_bits = n_count  # Classical bits for measurement
+    n_bits = n_count
+    q = 2 ** n_count  # Size of the counting register
 
-    # Initialize quantum state
-    state = State(n_qubits, n_bits)
-    print("Initial state:")
-    print(state)
-
-    # Apply Hadamard gates to counting register
-    for i in range(n_count):
-        state.h(i)
-    print("\nAfter Hadamard gates:")
-    print(state)
-
-    # Apply modular exponentiation
-    for i in range(n_count):
-        state = modular_exponentiation(state, a, N, i, n_count, n_target)
-    print("\nAfter modular exponentiation:")
-    print(state)
-
-    # Simplified inverse QFT (apply Hadamard for demonstration)
-    state = inverse_qft(state, n_count)
-
-    print("\nAfter inverse QFT (simplified):")
-    print(state)
-
-    # Measure counting register
-    for i in range(n_count):
-        state.measure(i, i)
-    print("\nAfter measurement:")
-    print(state)
-
-    # Extract period from classical bits
-    measured = int(''.join(map(str, state.cbits)), 2)
-    print(f"\nMeasured value: {measured}")
-
-    # Hard coded period
-    period = 4  # Known period for a=2, N=15
-    print(f"Found period: {period}")
-
-    # Find factors
-    if period % 2 == 0:
-        x = pow(a, period // 2, N)
-        factor1 = gcd(x - 1, N)
-        factor2 = gcd(x + 1, N)
-        factors = [f for f in [factor1, factor2] if 1 < f < N]
-        if factors:
-            print(f"Factors of {N}: {factors}")
+    for attempt in range(1, max_attempts + 1):
+        print(f"\nAttempt {attempt} of {max_attempts}:")
+        state = State(n_qubits, n_bits)
+        print("Initial state:")
+        print(state)
+        for i in range(n_count):
+            state.h(i)
+        print("\nAfter Hadamard gates:")
+        print(state)
+        for i in range(n_count):
+            state = modular_exponentiation(state, a, N, i, n_count, n_target)
+        print("\nAfter modular exponentiation:")
+        print(state)
+        state = inverse_qft(state, n_count)
+        print("\nAfter inverse QFT:")
+        print(state)
+        for i in range(n_count):
+            state.measure(i, i)
+        print("\nAfter measurement:")
+        print(state)
+        measured = int(''.join(map(str, state.cbits)), 2)
+        print(f"\nMeasured value: {measured}")
+        
+        # Find period using continued fraction
+        period = find_period(a, N, measured, q)
+        if period is None:
+            print("Failed to find period. Trying again.")
+            continue
+        
+        print(f"Found period: {period}")
+        if period % 2 == 0:
+            x = pow(a, period // 2, N)
+            factor1 = gcd(x - 1, N)
+            factor2 = gcd(x + 1, N)
+            factors = [f for f in [factor1, factor2] if 1 < f < N]
+            print ("attempt", attempt)
+            if factors:
+                print(f"Factors of {N}: {factors}")
+                return
+            else:
+                print("No non-trivial factors found. Trying again.")
         else:
-            print("No non-trivial factors found.")
-    else:
-        print("Period is odd, try a different a.")
+            print("Period is odd, trying a different measurement.")
+    
+    print(f"\nFailed to find period after {max_attempts} attempts.")
 
 if __name__ == "__main__":
-    shor_algorithm()
+    test_cases = [
+        #(15, 2),  # N=15, a=2
+        #(15, 7),  # N=15, a=7
+        (21, 2),  # N=21, a=2
+        #(35, 3),  # N=35, a=3
+        #(15, 5),  # N=15, a=5 (invalid, not coprime)
+    ]
+    for N, a in test_cases:
+        print(f"\nTesting N={N}, a={a}")
+        shor_algorithm(N=N, a=a)
