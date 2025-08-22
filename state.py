@@ -158,6 +158,10 @@ class State:
         self.state = seq(new_state)
         return self
 
+    def ry(self, qubit, angle):
+        # Implementation for Y-rotation gate
+        pass
+
     def __str__(self):
         """
         Return a string representation of the quantum state.
