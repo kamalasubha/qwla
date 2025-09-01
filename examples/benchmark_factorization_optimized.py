@@ -6,10 +6,6 @@ from fractions import Fraction
 from state import State
 
 class ImprovedQuantumFactorization:
-    """
-    Improved Shor's algorithm implementation with proper quantum circuits
-    and mathematical foundations
-    """
     
     def __init__(self):
         self.classical_results = []
@@ -20,12 +16,6 @@ class ImprovedQuantumFactorization:
     # ============= IMPROVED QUANTUM COMPONENTS =============
     
     def quantum_fourier_transform(self, state: State, qubits: List[int], inverse: bool = False):
-        """
-        Proper implementation of Quantum Fourier Transform
-        
-        Mathematical basis: QFT maps |j⟩ → (1/√N) Σ exp(2πijk/N) |k⟩
-        This is crucial for extracting the period from quantum phase
-        """
         n = len(qubits)
         
         if inverse:
@@ -50,12 +40,6 @@ class ImprovedQuantumFactorization:
     def modular_exponentiation_circuit(self, state: State, a: int, N: int, 
                                       control_qubits: List[int], 
                                       target_qubits: List[int]):
-        """
-        Quantum circuit for modular exponentiation: |x⟩|0⟩ → |x⟩|a^x mod N⟩
-        
-        This is the heart of Shor's algorithm, implementing:
-        U|y⟩ = |ay mod N⟩ for controlled-U^(2^k) operations
-        """
         n_controls = len(control_qubits)
         
         # Initialize target register to |1⟩
@@ -76,14 +60,6 @@ class ImprovedQuantumFactorization:
             state.cp(control_qubits[i], target_qubits[0], phase)
     
     def improved_quantum_order_finding(self, a: int, N: int) -> int:
-        """
-        Enhanced quantum order finding with proper phase estimation
-        
-        Mathematical foundation:
-        - Finding r such that a^r ≡ 1 (mod N)
-        - Uses quantum phase estimation to find r
-        - Success probability ≥ 1/log(N) per attempt
-        """
         # Determine number of qubits needed
         # We need 2n qubits for n-bit number to achieve high precision
         n_bits = N.bit_length()
@@ -138,14 +114,6 @@ class ImprovedQuantumFactorization:
         return -1
     
     def enhanced_shors_algorithm(self, N: int) -> Tuple[int, int]:
-        """
-        Enhanced Shor's algorithm with multiple improvements
-        
-        Complexity Analysis:
-        - Classical: O(exp(n^(1/3))) for n-bit number
-        - Quantum: O(n^3) operations
-        - Speedup: Exponential for large numbers
-        """
         # Check trivial cases
         if N % 2 == 0:
             return (2, N // 2)
@@ -229,10 +197,6 @@ class ImprovedQuantumFactorization:
         return (g, n // g) if g != n else (1, n)
     
     def quadratic_sieve(self, n: int) -> Tuple[int, int]:
-        """
-        Simplified Quadratic Sieve for medium-sized numbers
-        More efficient than trial division for numbers > 10^10
-        """
         if n % 2 == 0:
             return (2, n // 2)
         
@@ -262,7 +226,6 @@ class ImprovedQuantumFactorization:
         return self.pollard_rho(n)
     
     def _sieve_of_eratosthenes(self, limit: int) -> List[int]:
-        """Generate primes up to limit"""
         sieve = [True] * (limit + 1)
         sieve[0] = sieve[1] = False
         
@@ -276,11 +239,6 @@ class ImprovedQuantumFactorization:
     # ============= PERFORMANCE ANALYSIS =============
     
     def theoretical_complexity_analysis(self, n: int) -> dict:
-        """
-        Calculate theoretical complexity for different algorithms
-        
-        Returns complexity in terms of basic operations
-        """
         bit_length = n.bit_length()
         
         return {
@@ -308,9 +266,6 @@ class ImprovedQuantumFactorization:
         }
     
     def benchmark_with_analysis(self, numbers: List[int]) -> None:
-        """
-        Enhanced benchmarking with complexity analysis
-        """
         print("=" * 80)
         print("ENHANCED QUANTUM VS CLASSICAL FACTORIZATION ANALYSIS")
         print("=" * 80)
@@ -368,28 +323,7 @@ def main():
         # 16777259 # 4093 × 4099 (24 bits)
     ]
     
-    print("QUANTUM FACTORIZATION IMPROVEMENTS")
-    print("This demonstrates proper Shor's algorithm implementation")
-    print("Note: Simulation overhead masks true quantum advantage\n")
-    
     factorizer.benchmark_with_analysis(test_numbers)
-    
-    print("\n" + "=" * 80)
-    print("KEY IMPROVEMENTS IMPLEMENTED:")
-    print("=" * 80)
-    print("1. Proper Quantum Fourier Transform with correct phase rotations")
-    print("2. Modular exponentiation quantum circuit")
-    print("3. Continued fraction expansion for period extraction")
-    print("4. Theoretical complexity analysis showing O(log³ n) vs O(exp(√(ln n)))")
-    print("5. Detection of quantum advantage threshold")
-    
-    print("\n" + "=" * 80)
-    print("WHY QUANTUM WINS (THEORETICALLY):")
-    print("=" * 80)
-    print("• Classical: Must search through exponentially many candidates")
-    print("• Quantum: Uses superposition to check all periods simultaneously")
-    print("• QFT extracts period in polynomial time via interference")
-    print("• For 2048-bit RSA: Classical ~10^20 years, Quantum ~hours")
 
 if __name__ == "__main__":
     main()
