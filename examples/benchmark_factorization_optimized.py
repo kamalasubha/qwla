@@ -296,10 +296,10 @@ class ImprovedQuantumFactorization:
             
             # Analysis
             if n > complexity['shors_algorithm']['quantum_advantage_threshold']:
-                print(f"\n✓ Above quantum advantage threshold")
+                print(f"\n Above quantum advantage threshold")
                 print(f"  (Real quantum computer would show exponential speedup)")
             else:
-                print(f"\n✗ Below quantum advantage threshold")
+                print(f"\n Below quantum advantage threshold")
                 print(f"  (Classical methods still efficient for this size)")
 
 
@@ -319,8 +319,8 @@ def main():
         3233,    # 53 × 61 (12 bits)
         10403,   # 101 × 103 (14 bits)
         # For true quantum advantage, we'd need:
-        # 1048583, # 1021 × 1027 (20 bits)
-        # 16777259 # 4093 × 4099 (24 bits)
+        1048583, # 1021 × 1027 (20 bits)
+        16777259 # 4093 × 4099 (24 bits)
     ]
     
     factorizer.benchmark_with_analysis(test_numbers)

@@ -60,7 +60,7 @@ class State:
 
         This gate flips the basis states where qubit j is present.
         """
-        print(f"-> Applying X gate to qubit {j}")
+        # print(f"-> Applying X gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (flip(b, j), a))
         return self
 
@@ -68,7 +68,7 @@ class State:
         """
         Apply the CX (controlled-NOT) gate with control qubit ctrl (j) and target (k) qubit trgt.
         """
-        print(f"-> Applying CX gate with control {j} and target {k}")
+        # print(f"-> Applying CX gate with control {j} and target {k}")
         self.state = self.state.smap(lambda b, a: (b if not b[j] else flip(b, k), a))
         return self
 
@@ -76,7 +76,7 @@ class State:
         """
         Apply the S (phase) gate to the j-th qubit.
         """
-        print(f"-> Applying S gate to qubit {j}")
+        # print(f"-> Applying S gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (b, (1j ** b[j]) * a))
         return self
 
@@ -84,7 +84,7 @@ class State:
         """
         Apply the T gate to the j-th qubit.
         """
-        print(f"-> Applying T gate to qubit {j}")
+        # print(f"-> Applying T gate to qubit {j}")
         phase = exp(1j * pi / 4)
         self.state = self.state.smap(lambda b, a: (b, (phase ** b[j]) * a))
         return self
@@ -93,7 +93,7 @@ class State:
         """
         Apply the Hadamard gate to the j-th qubit.
         """
-        print(f"-> Applying Hadamard gate to qubit {j}")
+        # print(f"-> Applying Hadamard gate to qubit {j}")
         norm = 1 / sqrt(2)
         self.state = (
             self.state.smap(
@@ -108,7 +108,7 @@ class State:
         return self
 
     def cp(self, control: int, target: int, angle: float):
-        print(f"-> Applying CP gate with control {control}, target {target}, angle {angle:.3f}")
+        # print(f"-> Applying CP gate with control {control}, target {target}, angle {angle:.3f}")
         new_state = []
         for bits, amp in self.state:
             if bits[control] == 1 and bits[target] == 1:
@@ -138,12 +138,12 @@ class State:
         Returns:
             The state after measurement (collapsed)
         """
-        print(f"-> Measuring qubit {j}")
+        # print(f"-> Measuring qubit {j}")
         prob_0 = sum(abs(a) ** 2 for b, a in self.state if not b[j]).real
         #prob_0 = sum(abs(entry[1]) ** 2 for entry in self.state if not entry[0][j]).real
-        print(f"\tProbability of 0: {prob_0:.3f}")
+        # print(f"\tProbability of 0: {prob_0:.3f}")
         measurement = int(random.random() >= prob_0)
-        print(f"\tMeasurement result: {measurement}")
+        # print(f"\tMeasurement result: {measurement}")
         if cbit is not None:
             self.cbits[cbit] = int(measurement)
         new_state = []
