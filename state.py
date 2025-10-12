@@ -60,7 +60,7 @@ class State:
 
         This gate flips the basis states where qubit j is present.
         """
-        print(f"-> Applying X gate to qubit {j}")
+        #print(f"-> Applying X gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (flip(b, j), a))
         return self
 
@@ -68,15 +68,48 @@ class State:
         """
         Apply the CX (controlled-NOT) gate with control qubit ctrl (j) and target (k) qubit trgt.
         """
-        print(f"-> Applying CX gate with control {j} and target {k}")
+        #print(f"-> Applying CX gate with control {j} and target {k}")
         self.state = self.state.smap(lambda b, a: (b if not b[j] else flip(b, k), a))
+        return self
+
+    def cp(self, control: int, target: int, angle: float):
+        """
+        Apply controlled phase gate with improved numerical stability.
+        
+        Args:
+            control: Control qubit index
+            target: Target qubit index
+            angle: Phase angle in radians
+        """
+        # print(f"-> Applying CP gate with control {control}, target {target}, angle {angle:.3f}")
+        phase = exp(1j * angle)
+        self.state = self.state.smap(
+            lambda b, a: (b, a * phase if (b[control] and b[target]) else a)
+        )
+        return self
+
+    def swap(self, i: int, j: int):
+        """
+        Apply SWAP gate to exchange qubits i and j.
+        
+        Args:
+            i: First qubit index
+            j: Second qubit index
+        """
+        # print(f"-> Applying SWAP gate between qubits {i} and {j}")
+        def swap_bits(b, a):
+            new = mut_bitarray(b)
+            new[i], new[j] = new[j], new[i]
+            return (bitarray(new), a)
+        
+        self.state = self.state.smap(swap_bits)
         return self
 
     def s(self, j: int):
         """
         Apply the S (phase) gate to the j-th qubit.
         """
-        print(f"-> Applying S gate to qubit {j}")
+        #print(f"-> Applying S gate to qubit {j}")
         self.state = self.state.smap(lambda b, a: (b, (1j ** b[j]) * a))
         return self
 
@@ -84,7 +117,7 @@ class State:
         """
         Apply the T gate to the j-th qubit.
         """
-        print(f"-> Applying T gate to qubit {j}")
+        #print(f"-> Applying T gate to qubit {j}")
         phase = exp(1j * pi / 4)
         self.state = self.state.smap(lambda b, a: (b, (phase ** b[j]) * a))
         return self
@@ -93,7 +126,7 @@ class State:
         """
         Apply the Hadamard gate to the j-th qubit.
         """
-        print(f"-> Applying Hadamard gate to qubit {j}")
+        #print(f"-> Applying Hadamard gate to qubit {j}")
         norm = 1 / sqrt(2)
         self.state = (
             self.state.smap(
@@ -118,7 +151,7 @@ class State:
         Returns:
             The state after measurement (collapsed)
         """
-        print(f"-> Measuring qubit {j}")
+        #print(f"-> Measuring qubit {j}")
         # compute the probability of 0
         prob_0 = (
             self.state.filter(lambda s: not s[0][j])
@@ -127,9 +160,9 @@ class State:
             .real
         )  # take the real component (the imaginary component is 0)
 
-        print(f"\tProbability of 0: {prob_0:.3f}")
+        #print(f"\tProbability of 0: {prob_0:.3f}")
         measurement = int(random.random() >= prob_0)
-        print(f"\tMeasurement result: {measurement}")
+        #print(f"\tMeasurement result: {measurement}")
 
         if cbit is not None:
             self.cbits[cbit] = int(measurement)
