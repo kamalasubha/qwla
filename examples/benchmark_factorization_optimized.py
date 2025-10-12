@@ -4,6 +4,7 @@ import random
 from typing import List, Tuple, Optional
 from fractions import Fraction
 from state import State
+import sys
 
 class ImprovedQuantumFactorization:
     
@@ -113,20 +114,7 @@ class ImprovedQuantumFactorization:
         
         return -1
     
-    def enhanced_shors_algorithm(self, N: int) -> Tuple[int, int]:
-        # Check trivial cases
-        if N % 2 == 0:
-            return (2, N // 2)
-        
-        # Check if N is a perfect power
-        for k in range(2, int(math.log2(N)) + 1):
-            root = N ** (1/k)
-            if abs(round(root) ** k - N) < 1e-10:
-                factor = int(round(root))
-                return (factor, N // factor)
-        
-        # Main Shor's algorithm loop
-        max_attempts = min(20, int(math.log2(N)) + 5)
+    def enhanced_shors_algorithm(self, N: int, max_attempts: int) -> Tuple[int, int]:
         
         for attempt in range(max_attempts):
             # Step 1: Choose random a coprime to N
@@ -134,6 +122,7 @@ class ImprovedQuantumFactorization:
             gcd_val = math.gcd(a, N)
             
             if gcd_val > 1:
+                print ("attempt", attempt)
                 return (gcd_val, N // gcd_val)
             
             # Step 2: Find period using quantum order finding
@@ -152,10 +141,12 @@ class ImprovedQuantumFactorization:
             factor2 = math.gcd(x + 1, N)
             
             if 1 < factor1 < N:
+                print ("attempt", attempt)
                 return (factor1, N // factor1)
             if 1 < factor2 < N:
+                print ("attempt", attempt)
                 return (factor2, N // factor2)
-        
+
         # Fallback to classical method
         return self.pollard_rho(N)
     
@@ -163,6 +154,7 @@ class ImprovedQuantumFactorization:
     
     def pollard_rho(self, n: int) -> Tuple[int, int]:
         """Optimized Pollard's rho with Brent's improvement"""
+        print ("Fallback to pollard_rho")
         if n % 2 == 0:
             return (2, n // 2)
         
@@ -196,76 +188,9 @@ class ImprovedQuantumFactorization:
         
         return (g, n // g) if g != n else (1, n)
     
-    def quadratic_sieve(self, n: int) -> Tuple[int, int]:
-        if n % 2 == 0:
-            return (2, n // 2)
-        
-        # Simplified implementation for demonstration
-        B = int(math.exp(0.5 * math.sqrt(math.log(n) * math.log(math.log(n)))))
-        B = min(B, 100)  # Limit for simulation
-        
-        # Generate factor base
-        primes = self._sieve_of_eratosthenes(B)
-        
-        # Try to find smooth numbers
-        for _ in range(100):
-            x = random.randint(int(math.sqrt(n)), n)
-            y = (x * x) % n
-            
-            # Check if y is B-smooth (simplified)
-            temp_y = y
-            for p in primes:
-                while temp_y % p == 0:
-                    temp_y //= p
-            
-            if temp_y == 1:  # y is smooth
-                factor = math.gcd(x - int(math.sqrt(y)), n)
-                if 1 < factor < n:
-                    return (factor, n // factor)
-        
-        return self.pollard_rho(n)
-    
-    def _sieve_of_eratosthenes(self, limit: int) -> List[int]:
-        sieve = [True] * (limit + 1)
-        sieve[0] = sieve[1] = False
-        
-        for i in range(2, int(math.sqrt(limit)) + 1):
-            if sieve[i]:
-                for j in range(i * i, limit + 1, i):
-                    sieve[j] = False
-        
-        return [i for i in range(2, limit + 1) if sieve[i]]
-    
     # ============= PERFORMANCE ANALYSIS =============
     
-    def theoretical_complexity_analysis(self, n: int) -> dict:
-        bit_length = n.bit_length()
-        
-        return {
-            'trial_division': {
-                'worst_case': int(math.sqrt(n)),
-                'operations': 'O(√n)',
-                'exponential': True
-            },
-            'pollard_rho': {
-                'expected': int(n ** 0.25),
-                'operations': 'O(n^(1/4))',
-                'exponential': True
-            },
-            'quadratic_sieve': {
-                'complexity': int(math.exp(math.sqrt(math.log(n) * math.log(math.log(n))))),
-                'operations': 'O(exp(√(ln n ln ln n)))',
-                'sub_exponential': True
-            },
-            'shors_algorithm': {
-                'quantum_gates': bit_length ** 3,
-                'operations': 'O(log³ n)',
-                'polynomial': True,
-                'quantum_advantage_threshold': 2 ** 20  # ~1 million
-            }
-        }
-    
-    def benchmark_with_analysis(self, numbers: List[int]) -> None:
+    def benchmark_with_analysis(self, numbers: List[int], max_attempts: int) -> None:
         print("=" * 80)
         print("ENHANCED QUANTUM VS CLASSICAL FACTORIZATION ANALYSIS")
         print("=" * 80)
@@ -275,55 +200,85 @@ class ImprovedQuantumFactorization:
             print(f"Factoring N = {n} ({n.bit_length()} bits)")
             print(f"{'='*40}")
             
-            # Theoretical complexity
-            complexity = self.theoretical_complexity_analysis(n)
-            print("\nTheoretical Complexity:")
-            print(f"  Classical (Pollard): ~{complexity['pollard_rho']['expected']:,} operations")
-            print(f"  Quantum (Shor): ~{complexity['shors_algorithm']['quantum_gates']:,} quantum gates")
-            
             # Actual factorization
             start = time.time()
             factors_classical = self.pollard_rho(n)
             classical_time = time.time() - start
             
             start = time.time()
-            factors_quantum = self.enhanced_shors_algorithm(n)
+            factors_quantum = self.enhanced_shors_algorithm(n, max_attempts)
             quantum_time = time.time() - start
             
             print(f"\nResults:")
             print(f"  Classical: {factors_classical} in {classical_time:.6f}s")
             print(f"  Quantum: {factors_quantum} in {quantum_time:.6f}s")
             
-            # Analysis
-            if n > complexity['shors_algorithm']['quantum_advantage_threshold']:
-                print(f"\n Above quantum advantage threshold")
-                print(f"  (Real quantum computer would show exponential speedup)")
-            else:
-                print(f"\n Below quantum advantage threshold")
-                print(f"  (Classical methods still efficient for this size)")
 
 
 def main():
     """Enhanced demonstration with proper test cases"""
     random.seed(42)
-    
+    max_attempts = int(sys.argv[1])
     factorizer = ImprovedQuantumFactorization()
     
     # Test with increasingly large semiprimes (products of two primes)
     # These are the types of numbers used in RSA encryption
+    # Test numbers matching benchmark_factorization_optimized.py
     test_numbers = [
-        15,      # 3 × 5 (4 bits)
-        77,      # 7 × 11 (7 bits)
-        221,     # 13 × 17 (8 bits)
-        1517,    # 37 × 41 (11 bits)
-        3233,    # 53 × 61 (12 bits)
-        10403,   # 101 × 103 (14 bits)
-        # For true quantum advantage, we'd need:
-        1048583, # 1021 × 1027 (20 bits)
-        16777259 # 4093 × 4099 (24 bits)
-    ]
+              10,  # 2 × 5 (4 bits)
+              14,  # 2 × 7 (4 bits)
+              15,  # 3 × 5 (4 bits)
+              21,  # 3 × 7 (5 bits)
+              35,  # 5 × 7 (6 bits)
+             143,  # 11 × 13 (8 bits)
+             187,  # 11 × 17 (8 bits)
+             209,  # 11 × 19 (8 bits)
+             221,  # 13 × 17 (8 bits)
+             247,  # 13 × 19 (8 bits)
+             323,  # 17 × 19 (9 bits)
+             713,  # 23 × 31 (10 bits)
+             899,  # 29 × 31 (10 bits)
+            1081,  # 23 × 47 (11 bits)
+            1147,  # 31 × 37 (11 bits)
+            1403,  # 23 × 61 (11 bits)
+            1517,  # 37 × 41 (11 bits)
+            1643,  # 31 × 53 (11 bits)
+            1739,  # 37 × 47 (11 bits)
+            1927,  # 41 × 47 (11 bits)
+            2021,  # 43 × 47 (11 bits)
+            2419,  # 41 × 59 (12 bits)
+            2501,  # 41 × 61 (12 bits)
+            2867,  # 47 × 61 (12 bits)
+            3233,  # 53 × 61 (12 bits)
+            3599,  # 59 × 61 (12 bits)
+            8137,  # 79 × 103 (13 bits)
+           11413,  # 101 × 113 (14 bits)
+           14039,  # 101 × 139 (14 bits)
+           16837,  # 113 × 149 (15 bits)
+           17767,  # 109 × 163 (15 bits)
+           17869,  # 107 × 167 (15 bits)
+           18419,  # 113 × 163 (15 bits)
+           22879,  # 137 × 167 (15 bits)
+           25591,  # 157 × 163 (15 bits)
+           26219,  # 157 × 167 (15 bits)
+           26671,  # 149 × 179 (15 bits)
+           32399,  # 179 × 181 (15 bits)
+           50851,  # 211 × 241 (16 bits)
+           69451,  # 199 × 349 (17 bits)
+           72299,  # 197 × 367 (17 bits)
+           95951,  # 229 × 419 (17 bits)
+          111281,  # 257 × 433 (17 bits)
+          146633,  # 331 × 443 (18 bits)
+          190999,  # 389 × 491 (18 bits)
+          215549,  # 439 × 491 (18 bits)
+          220459,  # 449 × 491 (18 bits)
+          253991,  # 499 × 509 (18 bits)
+          858343,  # 733 × 1171 (20 bits)
+          921269,  # 757 × 1217 (20 bits)
+          954113]  # 719 × 1327 (20 bits)
     
-    factorizer.benchmark_with_analysis(test_numbers)
+    
+    factorizer.benchmark_with_analysis(test_numbers, max_attempts)
 
 if __name__ == "__main__":
     main()

@@ -4,14 +4,13 @@ import time
 from fractions import Fraction
 from typing import List, Tuple, Optional
 import numpy as np
+import sys
 
 # Qiskit imports
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
 from qiskit import transpile
 from qiskit_aer import AerSimulator
-from qiskit.circuit.library import QFT
-from qiskit.visualization import plot_histogram, circuit_drawer
-import matplotlib.pyplot as plt
+from qiskit.synthesis.qft import synth_qft_full
 
 class ShorsAlgorithmQiskit:
     """
@@ -27,8 +26,8 @@ class ShorsAlgorithmQiskit:
             shots: Number of measurement shots
         """
         self.backend = AerSimulator()
+        self.backend.set_options(seed_simulator=42)
         self.shots = shots
-        self.circuit_depth_analysis = {}
         
     def create_qft(self, n_qubits: int, inverse: bool = False) -> QuantumCircuit:
         """
@@ -41,8 +40,7 @@ class ShorsAlgorithmQiskit:
         Returns:
             QFT QuantumCircuit
         """
-        qft = QFT(num_qubits=n_qubits, inverse=inverse, do_swaps=True)
-        return qft.decompose()
+        return synth_qft_full(num_qubits=n_qubits, do_swaps=True, inverse=inverse)
     
     def controlled_unitary(self, qc: QuantumCircuit, control: int, 
                           target_qubits: List[int], a: int, N: int, power: int):
@@ -52,9 +50,6 @@ class ShorsAlgorithmQiskit:
         This is a simplified version - in practice, this would be implemented
         using modular arithmetic circuits
         """
-        # For demonstration, we'll use a simplified approach
-        # Real implementation would use quantum arithmetic circuits
-        
         # Calculate a^(2^power) mod N
         a_power = pow(a, 2**power, N)
         
@@ -85,6 +80,10 @@ class ShorsAlgorithmQiskit:
         # Limit for simulation feasibility
         n_count = min(n_count, 8)  # Reduce for simulation
         n_target = min(n_target, 4)
+
+        if N > 1000:
+            n_count = min(n_count, 12)  # More qubits for large N
+            n_target = min(n_target, 6)
         
         # Create quantum registers
         counting_reg = QuantumRegister(n_count, 'counting')
@@ -118,27 +117,19 @@ class ShorsAlgorithmQiskit:
         
         return qc, n_count
     
-    def run_quantum_order_finding(self, a: int, N: int, 
-                                 show_circuit: bool = False) -> Optional[int]:
+    def run_quantum_order_finding(self, a: int, N: int) -> Optional[int]:
         """
         Execute quantum order finding circuit
         
         Args:
             a: Base for modular exponentiation  
             N: Number to find order
-            show_circuit: If True, display the circuit
             
         Returns:
             The period r if found, None otherwise
         """
         # Create the quantum circuit
         qc, n_count = self.create_order_finding_circuit(a, N)
-        
-        if show_circuit:
-            print(f"Circuit depth: {qc.depth()}")
-            print(f"Circuit gates: {qc.count_ops()}")
-            # Display circuit (text format for compatibility)
-            print(qc.draw(output='text', fold=80))
         
         # Transpile and run the circuit
         transpiled_qc = transpile(qc, self.backend)
@@ -168,24 +159,18 @@ class ShorsAlgorithmQiskit:
         
         return None
     
-    def shors_algorithm(self, N: int, max_attempts: int = 30,
-                       verbose: bool = True) -> Tuple[int, int]:
+    def shors_algorithm(self, N: int, max_attempts: int) -> Tuple[int, int]:
         """
         Complete Shor's algorithm implementation
         
         Args:
             N: Number to factor
             max_attempts: Maximum number of attempts
-            verbose: Print progress information
             
         Returns:
             Tuple of factors (p, q) where N = p * q
         """
-        if verbose:
-            print(f"Factoring N = {N} using Shor's algorithm")
-            print("=" * 50)
-        
-        # Check trivial cases
+        """ # Check trivial cases
         if N % 2 == 0:
             return (2, N // 2)
         
@@ -194,162 +179,112 @@ class ShorsAlgorithmQiskit:
             root = N ** (1/k)
             if abs(round(root) ** k - N) < 1e-10:
                 factor = int(round(root))
-                return (factor, N // factor)
+                return (factor, N // factor) """
         
         # Main Shor's algorithm loop
         for attempt in range(max_attempts):
-            if verbose:
-                print(f"\nAttempt {attempt + 1}:")
-            
             # Step 1: Choose random a coprime to N
             a = random.randint(2, N - 1)
             gcd_val = math.gcd(a, N)
             
-            if verbose:
-                print(f"  Chosen a = {a}")
-            
             if gcd_val > 1:
-                if verbose:
-                    print(f"  Lucky! GCD(a, N) = {gcd_val}")
+                print ("attempt", attempt)
                 return (gcd_val, N // gcd_val)
             
             # Step 2: Find period using quantum order finding
-            if verbose:
-                print(f"  Running quantum order finding...")
-            
-            r = self.run_quantum_order_finding(a, N, show_circuit=(attempt == 0))
+            r = self.run_quantum_order_finding(a, N)
             
             if r is None:
-                if verbose:
-                    print(f"  No period found")
                 continue
             
-            if verbose:
-                print(f"  Found period r = {r}")
-            
             if r % 2 != 0:
-                if verbose:
-                    print(f"  Period is odd, trying again")
                 continue
             
             # Step 3: Use period to find factors
             x = pow(a, r // 2, N)
             
             if x == N - 1:
-                if verbose:
-                    print(f"  x = N-1, trying again")
                 continue
             
             factor1 = math.gcd(x - 1, N)
             factor2 = math.gcd(x + 1, N)
             
             if 1 < factor1 < N:
-                if verbose:
-                    print(f"  Success! Factors found")
+                print ("attempt", attempt)
                 return (factor1, N // factor1)
             
             if 1 < factor2 < N:
-                if verbose:
-                    print(f"  Success! Factors found")
+                print ("attempt", attempt)
                 return (factor2, N // factor2)
         
         # Fallback to classical method
-        if verbose:
-            print("\nQuantum algorithm unsuccessful, using classical fallback")
-        return self.classical_factorization(N)
+        return self.pollard_rho(N)
     
-    def classical_factorization(self, n: int) -> Tuple[int, int]:
-        """
-        Classical factorization fallback (Pollard's rho)
-        """
+    def pollard_rho(self, n: int) -> Tuple[int, int]:
+        """Optimized Pollard's rho with Brent's improvement"""
+        print ("Fallback to pollard_rho")
         if n % 2 == 0:
             return (2, n // 2)
         
-        # Pollard's rho algorithm
-        x = random.randint(2, n - 1)
-        y = x
-        d = 1
+        # Brent's improvement to Pollard's rho
+        y, c, m = random.randint(1, n - 1), random.randint(1, n - 1), random.randint(1, n - 1)
+        g, r, q = 1, 1, 1
         
-        f = lambda x: (x * x + 1) % n
+        while g == 1:
+            x = y
+            for _ in range(r):
+                y = (y * y + c) % n
+            
+            k = 0
+            while k < r and g == 1:
+                ys = y
+                for _ in range(min(m, r - k)):
+                    y = (y * y + c) % n
+                    q = (q * abs(x - y)) % n
+                
+                g = math.gcd(q, n)
+                k += m
+            
+            r *= 2
         
-        while d == 1:
-            x = f(x)
-            y = f(f(y))
-            d = math.gcd(abs(x - y), n)
+        if g == n:
+            while True:
+                ys = (ys * ys + c) % n
+                g = math.gcd(abs(x - ys), n)
+                if g > 1:
+                    break
         
-        if d != n:
-            return (d, n // d)
-        else:
-            # Trial division as last resort
-            for i in range(3, int(math.sqrt(n)) + 1, 2):
-                if n % i == 0:
-                    return (i, n // i)
-            return (1, n)
-    
-    def benchmark_analysis(self, test_numbers: List[int]) -> None:
+        return (g, n // g) if g != n else (1, n)
+
+    def benchmark_analysis(self, test_numbers: List[int], max_attempts: int) -> None:
         """
         Benchmark and analyze Shor's algorithm performance
         """
-        print("\n" + "=" * 80)
+        print("=" * 80)
         print("SHOR'S ALGORITHM BENCHMARK WITH QISKIT")
         print("=" * 80)
         
-        results = []
         
         for N in test_numbers:
             print(f"\n{'='*40}")
             print(f"Factoring N = {N} ({N.bit_length()} bits)")
             print(f"{'='*40}")
-            
-            # Theoretical analysis
-            quantum_gates = (N.bit_length()) ** 3
-            classical_ops = int(N ** 0.25)
-            
-            print(f"\nTheoretical Complexity:")
-            print(f"  Classical (Pollard): O(N^1/4) ≈ {classical_ops:,} operations")
-            print(f"  Quantum (Shor): O(log³N) ≈ {quantum_gates:,} gates")
-            
+
+            # Actual factorization
+            start = time.time()
+            factors_classical = self.pollard_rho(N)
+            classical_time = time.time() - start
+
             # Run Shor's algorithm
             start_time = time.time()
-            try:
-                factors = self.shors_algorithm(N, max_attempts=10, verbose=False)
-                elapsed_time = time.time() - start_time
+            factors_quantum = self.shors_algorithm(N, max_attempts)
+            quantum_time = time.time() - start_time
+
+            print(f"\nResults:")
+            print(f"  Classical: {factors_classical} in {classical_time:.6f}s")
+            print(f"  Quantum: {factors_quantum} in {quantum_time:.6f}s")
                 
-                print(f"\nResult: {N} = {factors[0]} × {factors[1]}")
-                print(f"Time: {elapsed_time:.4f} seconds")
-                
-                # Verify
-                if factors[0] * factors[1] == N:
-                    print("✓ Verification successful")
-                else:
-                    print("✗ Verification failed")
-                
-                results.append({
-                    'N': N,
-                    'factors': factors,
-                    'time': elapsed_time,
-                    'success': factors[0] * factors[1] == N
-                })
-                
-            except Exception as e:
-                print(f"Error: {e}")
-                results.append({
-                    'N': N,
-                    'factors': None,
-                    'time': None,
-                    'success': False
-                })
-        
-        # Summary
-        print("\n" + "=" * 80)
-        print("SUMMARY")
-        print("=" * 80)
-        successful = sum(1 for r in results if r['success'])
-        print(f"Successfully factored: {successful}/{len(test_numbers)}")
-        
-        if successful > 0:
-            avg_time = sum(r['time'] for r in results if r['success']) / successful
-            print(f"Average time: {avg_time:.4f} seconds")
+
 
 
 def main():
@@ -359,34 +294,66 @@ def main():
     # Set random seed for reproducibility
     random.seed(42)
     np.random.seed(42)
-    
+    max_attempts = int(sys.argv[1])
     # Initialize Shor's algorithm
-    shor = ShorsAlgorithmQiskit(shots=1024)
+    shor = ShorsAlgorithmQiskit(shots=2048)
     
-    # Test numbers (same as in your example)
+    # Test numbers matching benchmark_factorization_optimized.py
     test_numbers = [
-        15,      # 3 × 5 (4 bits)
-        21,      # 3 × 7 (5 bits)
-        33,      # 3 × 11 (6 bits)
-        35,      # 5 × 7 (6 bits)
-        77,      # 7 × 11 (7 bits)
-        143,     # 11 × 13 (8 bits)
-        # Larger numbers for demonstration (simulation will be approximate)
-        221,     # 13 × 17 (8 bits)
-        437,     # 19 × 23 (9 bits)
-    ]
+              10,  # 2 × 5 (4 bits)
+              14,  # 2 × 7 (4 bits)
+              15,  # 3 × 5 (4 bits)
+              21,  # 3 × 7 (5 bits)
+              35,  # 5 × 7 (6 bits)
+             143,  # 11 × 13 (8 bits)
+             187,  # 11 × 17 (8 bits)
+             209,  # 11 × 19 (8 bits)
+             221,  # 13 × 17 (8 bits)
+             247,  # 13 × 19 (8 bits)
+             323,  # 17 × 19 (9 bits)
+             713,  # 23 × 31 (10 bits)
+             899,  # 29 × 31 (10 bits)
+            1081,  # 23 × 47 (11 bits)
+            1147,  # 31 × 37 (11 bits)
+            1403,  # 23 × 61 (11 bits)
+            1517,  # 37 × 41 (11 bits)
+            1643,  # 31 × 53 (11 bits)
+            1739,  # 37 × 47 (11 bits)
+            1927,  # 41 × 47 (11 bits)
+            2021,  # 43 × 47 (11 bits)
+            2419,  # 41 × 59 (12 bits)
+            2501,  # 41 × 61 (12 bits)
+            2867,  # 47 × 61 (12 bits)
+            3233,  # 53 × 61 (12 bits)
+            3599,  # 59 × 61 (12 bits)
+            8137,  # 79 × 103 (13 bits)
+           11413,  # 101 × 113 (14 bits)
+           14039,  # 101 × 139 (14 bits)
+           16837,  # 113 × 149 (15 bits)
+           17767,  # 109 × 163 (15 bits)
+           17869,  # 107 × 167 (15 bits)
+           18419,  # 113 × 163 (15 bits)
+           22879,  # 137 × 167 (15 bits)
+           25591,  # 157 × 163 (15 bits)
+           26219,  # 157 × 167 (15 bits)
+           26671,  # 149 × 179 (15 bits)
+           32399,  # 179 × 181 (15 bits)
+           50851,  # 211 × 241 (16 bits)
+           69451,  # 199 × 349 (17 bits)
+           72299,  # 197 × 367 (17 bits)
+           95951,  # 229 × 419 (17 bits)
+          111281,  # 257 × 433 (17 bits)
+          146633,  # 331 × 443 (18 bits)
+          190999,  # 389 × 491 (18 bits)
+          215549,  # 439 × 491 (18 bits)
+          220459,  # 449 × 491 (18 bits)
+          253991,  # 499 × 509 (18 bits)
+          858343,  # 733 × 1171 (20 bits)
+          921269,  # 757 × 1217 (20 bits)
+          954113]  # 719 × 1327 (20 bits)
     
     # Run benchmark
-    shor.benchmark_analysis(test_numbers)
-    
-    # Demonstrate detailed single factorization
-    print("\n" + "=" * 80)
-    print("DETAILED EXAMPLE: Factoring 15")
-    print("=" * 80)
-    
-    N = 15
-    factors = shor.shors_algorithm(N, verbose=True)
-    print(f"\nFinal result: {N} = {factors[0]} × {factors[1]}")
+    shor.benchmark_analysis(test_numbers, max_attempts)
 
 
 if __name__ == "__main__":
